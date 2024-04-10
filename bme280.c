@@ -129,6 +129,13 @@ static esp_err_t bme280_read_u8(bme280_handle_t handle, uint8_t address, uint8_t
     }
 }
 
+static esp_err_t bme280_read_s8(bme280_handle_t handle, const uint8_t address, int8_t* value) {
+    uint8_t temp = 0U;
+    BME280_RETURN_ON_ERROR(bme280_read_u8(handle, address, &temp));
+    *value = (int8_t)temp;
+    return ESP_OK;
+}
+
 static esp_err_t bme280_write_u8(bme280_handle_t handle, const uint8_t address, const uint8_t value) {
      switch (handle->protocol) {
         case BME280_PROTOCOL_SPI: {
@@ -138,27 +145,6 @@ static esp_err_t bme280_write_u8(bme280_handle_t handle, const uint8_t address, 
         case BME280_PROTOCOL_I2C: {
             const uint8_t req_buff[2] = {address, value};
             return BME280_I2C_WRITE_BYTES(handle, req_buff, sizeof(req_buff));
-        }
-        default:
-            return ESP_ERR_NOT_SUPPORTED;
-    }
-}
-
-static esp_err_t bme280_read_s8(bme280_handle_t handle, const uint8_t address, int8_t* value) {
-    switch (handle->protocol) {
-        case BME280_PROTOCOL_SPI: {
-            const uint8_t send_buff[2] = {BME280_SPI_READ_ADDRESS(address), BME280_SPI_IDLE_BYTE};
-            uint8_t recv_buff[2] = {0};
-            BME280_RETURN_ON_ERROR(BME280_SPI_READ_BYTES(handle, send_buff, recv_buff, sizeof(recv_buff)));
-            *value = (int8_t)recv_buff[1]; // return received byte (0 byte is dummy)
-            return ESP_OK;
-        }
-        case BME280_PROTOCOL_I2C: {
-            const uint8_t send_buff[1] = {address};
-            uint8_t recv_buff[1] = {0};
-            BME280_RETURN_ON_ERROR(BME280_I2C_READ_BYTES(handle, send_buff, sizeof(send_buff), recv_buff, sizeof(recv_buff)));
-            *value = (int8_t)recv_buff[0];
-            return ESP_OK;
         }
         default:
             return ESP_ERR_NOT_SUPPORTED;
@@ -188,25 +174,10 @@ static esp_err_t bme280_read_u16(bme280_handle_t handle, const uint8_t address, 
 }
 
 static esp_err_t bme280_read_s16(bme280_handle_t handle, const uint8_t address, int16_t* value) {
-    switch (handle->protocol) {
-        case BME280_PROTOCOL_SPI: {
-            const uint8_t send_buff[3] = {BME280_SPI_READ_ADDRESS(address), BME280_SPI_IDLE_BYTE,
-                                          BME280_SPI_IDLE_BYTE};
-            uint8_t recv_buff[3] = {0};
-            BME280_RETURN_ON_ERROR(BME280_SPI_READ_BYTES(handle, send_buff, recv_buff, sizeof(recv_buff)));
-            *value = (int16_t)(((uint16_t)recv_buff[2]) << 8U) | ((uint16_t)recv_buff[1]);
-            return ESP_OK;
-        }
-        case BME280_PROTOCOL_I2C: {
-            uint8_t send_buff[2] = {address, BME280_I2C_IDLE_BYTE};
-            uint8_t recv_buff[2] = {0};
-            BME280_RETURN_ON_ERROR(BME280_I2C_READ_BYTES(handle, send_buff, sizeof(send_buff), recv_buff, sizeof(recv_buff)));
-            *value = (int16_t)(((uint16_t)recv_buff[1]) << 8U) | ((uint16_t)recv_buff[0]);
-            return ESP_OK;
-        }
-        default:
-            return ESP_ERR_NOT_SUPPORTED;
-    }
+    uint16_t temp = 0U;
+    BME280_RETURN_ON_ERROR(bme280_read_u16(handle, address, &temp));
+    *value = (int16_t)temp;
+    return ESP_OK;
 }
 
 static esp_err_t bme280_write_config(bme280_handle_t handle, const bme280_config_t* const config) {
